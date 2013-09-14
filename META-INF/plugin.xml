@@ -1,0 +1,31 @@
+<idea-plugin version="2">
+  <id>ru.yole.faguirra</id>
+  <name>Faguirra File Manager</name>
+  <version>1.0</version>
+  <vendor email="intelliyole@gmail.com">Dmitry Jemerov</vendor>
+
+  <description><![CDATA[
+      Enter short description for your plugin here.<br>
+      <small>most HTML tags may be used</small>
+      ]]></description>
+
+  <!-- please see http://confluence.jetbrains.net/display/IDEADEV/Build+Number+Ranges for description -->
+  <idea-version since-build="107.105"/>
+
+  <!-- please see http://confluence.jetbrains.net/display/IDEADEV/Plugin+Compatibility+with+IntelliJ+Platform+Products
+       on how to target different products -->
+  <!-- uncomment to enable plugin in all products
+  <depends>com.intellij.modules.lang</depends>
+  -->
+
+  <extensions defaultExtensionNs="com.intellij">
+      <virtualFileSystem id="faguirra" key="faguirra" implementationClass="ru.yole.faguirra.fs.FaguirraFileSystem"/>
+      <fileEditorProvider implementation="ru.yole.faguirra.FaguirraEditorProvider"/>
+  </extensions>
+
+  <actions>
+      <action id="OpenFaguirra" class="ru.yole.faguirra.actions.OpenFaguirraAction" text="Open Faguirra">
+          <add-to-group group-id="ToolsMenu" anchor="last"/>
+      </action>
+  </actions>
+</idea-plugin>
