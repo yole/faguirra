@@ -11,6 +11,8 @@ import com.intellij.util.IconUtil
 import javax.swing.JComponent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import com.intellij.openapi.actionSystem.DataProvider
+import com.intellij.openapi.actionSystem.PlatformDataKeys
 
 public class FileRenderer(): ColoredListCellRenderer() {
     override fun customizeCellRenderer(p0: JList?, p1: Any?, p2: Int, p3: Boolean, p4: Boolean) {
@@ -25,7 +27,7 @@ public class FileRenderer(): ColoredListCellRenderer() {
     }
 }
 
-public class FaguirraPanel(): JPanel(BorderLayout()) {
+public class FaguirraPanel(): JPanel(BorderLayout()), DataProvider {
     private val fileListModel = CollectionListModel<VirtualFile?>()
     private var fileList: JList? = null
     private var currentDir: VirtualFile? = null
@@ -81,11 +83,24 @@ public class FaguirraPanel(): JPanel(BorderLayout()) {
             currentDir = currentDir?.getParent()
         }
         else {
+            if (!selectedFile.isDirectory()) return
             fileToSelect = null
             currentDir = selectedFile
         }
         updateCurrentDir(fileToSelect)
     }
+
+    private fun getSelectedFiles(): Array<VirtualFile> {
+        val selectionArray = fileList!!.getSelectedValues() as Array<Any?>
+        val selection = selectionArray.filter { it -> it as? VirtualFile != null }
+        return selection.toArray(arrayOfNulls<VirtualFile>(selection.size)) as Array<VirtualFile>
+    }
+
+    override fun getData(dataKey: String?): Any? =
+        when(dataKey) {
+            PlatformDataKeys.VIRTUAL_FILE_ARRAY.getName() -> getSelectedFiles()
+            else -> null
+        }
 
     public fun getPreferredFocusComponent(): JComponent? = fileList
 }
