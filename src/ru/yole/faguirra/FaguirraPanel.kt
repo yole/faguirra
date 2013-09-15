@@ -29,21 +29,20 @@ public class FileRenderer(): ColoredListCellRenderer() {
 
 public class FaguirraPanel(): JPanel(BorderLayout()), DataProvider {
     private val fileListModel = CollectionListModel<VirtualFile?>()
-    private var fileList: JList? = null
+    private val fileList = JList(fileListModel)
     private var currentDir: VirtualFile? = null
     private var showHiddenFiles: Boolean = false
 
     {
-        fileList = JList(fileListModel)
-        fileList!!.addMouseListener(object : MouseAdapter() {
+        fileList.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(event: MouseEvent) {
                 if (event.getClickCount() == 2 && event.getButton() == 1) {
                     gotoSelectedDir();
                 }
             }
         })
-        fileList!!.setCellRenderer(FileRenderer())
-        add(fileList!!, BorderLayout.CENTER)
+        fileList.setCellRenderer(FileRenderer())
+        add(fileList, BorderLayout.CENTER)
         currentDir = LocalFileSystem.getInstance()!!.findFileByPath("/")
         updateCurrentDir(null)
     }
@@ -56,7 +55,7 @@ public class FaguirraPanel(): JPanel(BorderLayout()), DataProvider {
             val contents = getDirContents(currentDir!!)
             fileListModel.replaceAll(contents)
             val indexToSelect = contents.indexOf(fileToSelect)
-            fileList!!.setSelectedIndex(if (indexToSelect < 0) 0 else indexToSelect)
+            fileList.setSelectedIndex(if (indexToSelect < 0) 0 else indexToSelect)
         }
     }
 
@@ -74,7 +73,7 @@ public class FaguirraPanel(): JPanel(BorderLayout()), DataProvider {
     }
 
     private fun gotoSelectedDir() {
-        val selection = fileList!!.getSelectedValues()
+        val selection = fileList.getSelectedValues()
         if (selection.size == 0) return
         val selectedFile = selection[0] as? VirtualFile
         val fileToSelect: VirtualFile?
@@ -91,7 +90,7 @@ public class FaguirraPanel(): JPanel(BorderLayout()), DataProvider {
     }
 
     private fun getSelectedFiles(): Array<VirtualFile> {
-        val selectionArray = fileList!!.getSelectedValues() as Array<Any?>
+        val selectionArray = fileList.getSelectedValues() as Array<Any?>
         val selection = selectionArray.filter { it -> it as? VirtualFile != null }
         return selection.toArray(arrayOfNulls<VirtualFile>(selection.size)) as Array<VirtualFile>
     }

@@ -35,10 +35,10 @@ public class FaguirraEditorState(): FileEditorState {
 }
 
 public class FaguirraFileEditor(): UserDataHolderBase(), FileEditor, DumbAware {
-    private val panel = FaguirraPanel()
+    private val tab = FaguirraTab()
 
-    override fun getComponent() = panel
-    override fun getPreferredFocusedComponent() = panel.getPreferredFocusComponent()
+    override fun getComponent() = tab
+    override fun getPreferredFocusedComponent() = tab.getPreferredFocusComponent()
     override fun getName() = "Faguirra"
     override fun getState(level: FileEditorStateLevel) = FaguirraEditorState()
     override fun setState(state: FileEditorState) { }
