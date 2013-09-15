@@ -20,7 +20,7 @@ import com.intellij.ide.structureView.StructureViewBuilder
 public class FaguirraEditorProvider(): FileEditorProvider, DumbAware {
     override fun accept(project: Project, file: VirtualFile) = file is FaguirraVirtualFile
 
-    override fun createEditor(project: Project, file: VirtualFile) = FaguirraFileEditor()
+    override fun createEditor(project: Project, file: VirtualFile) = FaguirraFileEditor(project)
     override fun disposeEditor(editor: FileEditor) { }
 
     override fun readState(sourceElement: Element, project: Project, file: VirtualFile) = FaguirraEditorState()
@@ -34,8 +34,8 @@ public class FaguirraEditorState(): FileEditorState {
     override fun canBeMergedWith(otherState: FileEditorState?, level: FileEditorStateLevel?) = false
 }
 
-public class FaguirraFileEditor(): UserDataHolderBase(), FileEditor, DumbAware {
-    private val tab = FaguirraTab()
+public class FaguirraFileEditor(val project: Project): UserDataHolderBase(), FileEditor, DumbAware {
+    private val tab = FaguirraTab(project)
 
     override fun getComponent() = tab
     override fun getPreferredFocusedComponent() = tab.getPreferredFocusComponent()

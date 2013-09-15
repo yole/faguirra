@@ -15,8 +15,8 @@ import com.intellij.openapi.actionSystem.DataProvider
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 
 public class FileRenderer(): ColoredListCellRenderer() {
-    override fun customizeCellRenderer(p0: JList?, p1: Any?, p2: Int, p3: Boolean, p4: Boolean) {
-        val file = p1 as VirtualFile?
+    override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
+        val file = value as VirtualFile?
         if (file == null) {
             append("..")
         }

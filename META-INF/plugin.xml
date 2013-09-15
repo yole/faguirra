@@ -10,13 +10,12 @@
       ]]></description>
 
   <!-- please see http://confluence.jetbrains.net/display/IDEADEV/Build+Number+Ranges for description -->
-  <idea-version since-build="107.105"/>
+  <idea-version since-build="131.1"/>
 
   <!-- please see http://confluence.jetbrains.net/display/IDEADEV/Plugin+Compatibility+with+IntelliJ+Platform+Products
        on how to target different products -->
-  <!-- uncomment to enable plugin in all products
   <depends>com.intellij.modules.lang</depends>
-  -->
+  <depends>org.jetbrains.plugins.terminal</depends>
 
   <extensions defaultExtensionNs="com.intellij">
       <virtualFileSystem id="faguirra" key="faguirra" implementationClass="ru.yole.faguirra.fs.FaguirraFileSystem"/>
