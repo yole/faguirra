@@ -13,11 +13,13 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import com.intellij.openapi.actionSystem.DataProvider
 import com.intellij.openapi.actionSystem.PlatformDataKeys
+import java.util.Collections
+import java.util.Comparator
 
-public class FileRenderer(): ColoredListCellRenderer() {
+public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
-        val file = value as VirtualFile?
-        if (file == null) {
+        val file = value as VirtualFile
+        if (file == panel.currentDir.getParent()) {
             append("..")
         }
         else {
@@ -28,9 +30,10 @@ public class FileRenderer(): ColoredListCellRenderer() {
 }
 
 public class FaguirraPanel(): JPanel(BorderLayout()), DataProvider {
-    private val fileListModel = CollectionListModel<VirtualFile?>()
+    private val fileListModel = CollectionListModel<VirtualFile>()
     private val fileList = JList(fileListModel)
-    private var currentDir: VirtualFile? = null
+    public var currentDir: VirtualFile = LocalFileSystem.getInstance()!!.getRoot()
+
     private var showHiddenFiles: Boolean = false
 
     {
@@ -41,33 +44,32 @@ public class FaguirraPanel(): JPanel(BorderLayout()), DataProvider {
                 }
             }
         })
-        fileList.setCellRenderer(FileRenderer())
+        fileList.setCellRenderer(FileRenderer(this))
         add(fileList, BorderLayout.CENTER)
-        currentDir = LocalFileSystem.getInstance()!!.findFileByPath("/")
         updateCurrentDir(null)
     }
 
     private fun updateCurrentDir(fileToSelect: VirtualFile?) {
-        if (currentDir == null) {
-            fileListModel.replaceAll(listOf())
-        }
-        else {
-            val contents = getDirContents(currentDir!!)
-            fileListModel.replaceAll(contents)
-            val indexToSelect = contents.indexOf(fileToSelect)
-            fileList.setSelectedIndex(if (indexToSelect < 0) 0 else indexToSelect)
-        }
+        val contents = getDirContents(currentDir)
+        fileListModel.replaceAll(contents)
+        val indexToSelect = contents.indexOf(fileToSelect)
+        fileList.setSelectedIndex(if (indexToSelect < 0) 0 else indexToSelect)
     }
 
-    private fun getDirContents(dir: VirtualFile): List<VirtualFile?> {
-        val result = arrayListOf<VirtualFile?>()
+    private fun getDirContents(dir: VirtualFile): List<VirtualFile> {
+        val result = arrayListOf<VirtualFile>()
         dir.getChildren()!!.toCollection(result)
-        result.sortBy { it -> it!!.getName().toLowerCase() }
-        if (dir.getParent() != null) {
-            result.add(0, null)
+        Collections.sort(result, object: Comparator<VirtualFile> {
+            override fun compare(p0: VirtualFile, p1: VirtualFile): Int {
+                return p0.getName().toLowerCase().compareTo(p1.getName().toLowerCase())
+            }
+        })
+        val parent = dir.getParent()
+        if (parent != null) {
+            result.add(0, parent)
         }
         if (!showHiddenFiles) {
-            return result.filter { it -> it == null || !it.getName().startsWith(".") }
+            return result.filter { !it.getName().startsWith(".") }
         }
         return result
     }
@@ -78,8 +80,10 @@ public class FaguirraPanel(): JPanel(BorderLayout()), DataProvider {
         val selectedFile = selection[0] as? VirtualFile
         val fileToSelect: VirtualFile?
         if (selectedFile == null) {
+            val parent = currentDir.getParent()
+            if (parent == null) return
             fileToSelect = currentDir
-            currentDir = currentDir?.getParent()
+            currentDir = parent
         }
         else {
             if (!selectedFile.isDirectory()) return
