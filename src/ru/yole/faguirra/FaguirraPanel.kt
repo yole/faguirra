@@ -31,6 +31,7 @@ import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import com.intellij.ui.components.JBScrollPane
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
@@ -84,7 +85,7 @@ public class FaguirraPanel(val project: Project, parentDisposable: Disposable): 
         editSourceAction?.registerCustomShortcutSet(CommonShortcuts.ENTER, fileList)
 
         fileList.setCellRenderer(FileRenderer(this))
-        add(fileList, BorderLayout.CENTER)
+        add(JBScrollPane(fileList), BorderLayout.CENTER)
         add(statusLine, BorderLayout.SOUTH)
         updateCurrentDir(null)
 
