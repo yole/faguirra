@@ -26,6 +26,11 @@ import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.actionSystem.CommonShortcuts
 import javax.swing.JLabel
 import com.intellij.openapi.util.text.StringUtil
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.vfs.newvfs.BulkFileListener
+import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
@@ -49,7 +54,15 @@ public class PanelNavigatable(val panel: FaguirraPanel, val directory: VirtualFi
     override fun canNavigateToSource() = true
 }
 
-public class FaguirraPanel(val project: Project): JPanel(BorderLayout()), DataProvider {
+public class FaguirraVFSListener(val panel: FaguirraPanel): BulkFileListener.Adapter() {
+    override fun after(events: List<VFileEvent?>) {
+        if (events.any { it?.getFile()?.getParent() == panel.currentDir }) {
+            panel.refreshCurrentDir()
+        }
+    }
+}
+
+public class FaguirraPanel(val project: Project, parentDisposable: Disposable): JPanel(BorderLayout()), DataProvider, Disposable {
     private val fileListModel = CollectionListModel<VirtualFile>()
     private val fileList = JList(fileListModel)
     private val statusLine = JLabel()
@@ -74,6 +87,30 @@ public class FaguirraPanel(val project: Project): JPanel(BorderLayout()), DataPr
         add(fileList, BorderLayout.CENTER)
         add(statusLine, BorderLayout.SOUTH)
         updateCurrentDir(null)
+
+        project.getMessageBus().connect(this).subscribe(VirtualFileManager.VFS_CHANGES, FaguirraVFSListener(this))
+        Disposer.register(parentDisposable, this)
+    }
+
+    public override fun dispose() {
+    }
+
+    public fun refreshCurrentDir() {
+        val oldSelectedIndex = fileList.getSelectedIndex()
+        val selection = getSelectedFiles()
+        val contents = getDirContents(currentDir)
+        fileListModel.replaceAll(contents)
+        val newIndices = selection.map { contents.indexOf(it) }.filter { it != -1 }
+        if (newIndices.size > 0) {
+            val newIndexArray = IntArray(newIndices.size())
+            for(i in 0.rangeTo(newIndexArray.size)) {
+                newIndexArray[i] = newIndices[i]-1
+            }
+            fileList.setSelectedIndices(newIndexArray)
+        }
+        else {
+            fileList.setSelectedIndex(oldSelectedIndex)
+        }
     }
 
     public fun updateCurrentDir(fileToSelect: VirtualFile?) {

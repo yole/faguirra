@@ -11,11 +11,8 @@ import com.intellij.openapi.fileEditor.FileEditorPolicy
 import ru.yole.faguirra.fs.FaguirraVirtualFile
 import com.intellij.openapi.fileEditor.FileEditorStateLevel
 import com.intellij.openapi.util.UserDataHolderBase
-import javax.swing.JComponent
 import java.beans.PropertyChangeListener
-import com.intellij.codeHighlighting.BackgroundEditorHighlighter
-import com.intellij.openapi.fileEditor.FileEditorLocation
-import com.intellij.ide.structureView.StructureViewBuilder
+import com.intellij.openapi.util.Disposer
 
 public class FaguirraEditorProvider(): FileEditorProvider, DumbAware {
     override fun accept(project: Project, file: VirtualFile) = file is FaguirraVirtualFile
@@ -59,5 +56,6 @@ public class FaguirraFileEditor(val project: Project): UserDataHolderBase(), Fil
     override fun getStructureViewBuilder() = null
 
     override fun dispose() {
+        Disposer.dispose(tab)
     }
 }

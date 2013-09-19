@@ -6,10 +6,11 @@ import javax.swing.JPanel
 import javax.swing.JComponent
 import org.jetbrains.plugins.terminal.OpenLocalTerminalAction
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.Disposable
 
-public class FaguirraTab(val project: Project): JPanel(BorderLayout()) {
-    val leftPanel = FaguirraPanel(project)
-    val rightPanel = FaguirraPanel(project)
+public class FaguirraTab(val project: Project): JPanel(BorderLayout()), Disposable {
+    val leftPanel = FaguirraPanel(project, this)
+    val rightPanel = FaguirraPanel(project, this)
     val splitter = Splitter(true, 0.8)
     val panelSplitter = Splitter(false)
     val terminalRunner = OpenLocalTerminalAction.createTerminalRunner(project)!!;
@@ -25,4 +26,7 @@ public class FaguirraTab(val project: Project): JPanel(BorderLayout()) {
     }
 
     public fun getPreferredFocusComponent(): JComponent = leftPanel
+
+    public override fun dispose() {
+    }
 }
