@@ -62,7 +62,14 @@ public class FaguirraFileSystem(): DeprecatedVirtualFileSystem() {
 
     override fun getProtocol(): String = PROTOCOL
 
-    override fun findFileByPath(path: String): VirtualFile? = files.find { it.getName() == path }
+    override fun findFileByPath(path: String): VirtualFile? {
+        val result = files.find { it.getName() == path }
+        if (result != null) return result
+        if (path.equals("Faguirra") && files.size() == 0) {
+            return allocateFile()
+        }
+        return null
+    }
 
     override fun refresh(asynchronous: Boolean) {
     }
