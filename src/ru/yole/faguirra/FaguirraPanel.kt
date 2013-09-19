@@ -15,6 +15,10 @@ import com.intellij.openapi.actionSystem.DataProvider
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import java.util.Collections
 import java.util.Comparator
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.actionSystem.LangDataKeys
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiManager
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
@@ -29,7 +33,7 @@ public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     }
 }
 
-public class FaguirraPanel(): JPanel(BorderLayout()), DataProvider {
+public class FaguirraPanel(val project: Project): JPanel(BorderLayout()), DataProvider {
     private val fileListModel = CollectionListModel<VirtualFile>()
     private val fileList = JList(fileListModel)
     public var currentDir: VirtualFile = LocalFileSystem.getInstance()!!.getRoot()
@@ -95,15 +99,25 @@ public class FaguirraPanel(): JPanel(BorderLayout()), DataProvider {
 
     private fun getSelectedFiles(): Array<VirtualFile> {
         val selectionArray = fileList.getSelectedValues() as Array<Any?>
-        val selection = selectionArray.filter { it -> it as? VirtualFile != null }
+        val selection = selectionArray.filter { it as? VirtualFile != null }
         return selection.toArray(arrayOfNulls<VirtualFile>(selection.size)) as Array<VirtualFile>
     }
 
+    private fun getSelectedPsiFiles(): Array<PsiElement> {
+        val psiManager = PsiManager.getInstance(project)
+        val fileList = getSelectedFiles().map {
+            if (it.isDirectory()) psiManager.findDirectory(it) else psiManager.findFile(it)
+        }.filter { it != null }
+        return fileList.toArray(arrayOfNulls<PsiElement>(fileList.size())) as Array<PsiElement>
+    }
+
     override fun getData(dataKey: String?): Any? =
-        when(dataKey) {
-            PlatformDataKeys.VIRTUAL_FILE_ARRAY.getName() -> getSelectedFiles()
-            else -> null
-        }
+            when(dataKey) {
+                PlatformDataKeys.VIRTUAL_FILE_ARRAY.getName() -> getSelectedFiles()
+                LangDataKeys.PSI_ELEMENT_ARRAY.getName() -> getSelectedPsiFiles()
+                PlatformDataKeys.PROJECT.getName() -> project
+                else -> null
+            }
 
     public fun getPreferredFocusComponent(): JComponent? = fileList
 }
