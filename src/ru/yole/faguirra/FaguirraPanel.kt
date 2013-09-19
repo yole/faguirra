@@ -196,4 +196,18 @@ public class FaguirraPanel(val project: Project, parentDisposable: Disposable): 
             }
 
     public fun getPreferredFocusComponent(): JComponent? = fileList
+
+    public fun getState(): FaguirraPanelState {
+        return FaguirraPanelState(currentDir.getPath())
+    }
+
+    public fun setState(state: FaguirraPanelState) {
+        val dir = state.currentDir
+        if (dir != null) {
+            val file = LocalFileSystem.getInstance()!!.findFileByPath(dir)
+            if (file != null) {
+                changeDir(file)
+            }
+        }
+    }
 }

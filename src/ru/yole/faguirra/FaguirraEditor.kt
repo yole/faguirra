@@ -14,21 +14,53 @@ import com.intellij.openapi.util.UserDataHolderBase
 import java.beans.PropertyChangeListener
 import com.intellij.openapi.util.Disposer
 
+public data class FaguirraPanelState(val currentDir: String?) {
+    fun writeState(targetElement: Element) {
+        if (currentDir != null) {
+            targetElement.setAttribute("currentDir", currentDir)
+        }
+    }
+
+    class object {
+        fun read(sourceElement: Element?): FaguirraPanelState {
+            val currentDir = sourceElement?.getAttributeValue("currentDir")
+            return FaguirraPanelState(currentDir)
+        }
+    }
+}
+
+public class FaguirraEditorState(val leftPanelState: FaguirraPanelState,
+                                 val rightPanelState: FaguirraPanelState,
+                                 val rightPanelActive: Boolean): FileEditorState {
+    override fun canBeMergedWith(otherState: FileEditorState?, level: FileEditorStateLevel?) = false
+}
+
 public class FaguirraEditorProvider(): FileEditorProvider, DumbAware {
     override fun accept(project: Project, file: VirtualFile) = file is FaguirraVirtualFile
 
     override fun createEditor(project: Project, file: VirtualFile) = FaguirraFileEditor(project)
     override fun disposeEditor(editor: FileEditor) { }
 
-    override fun readState(sourceElement: Element, project: Project, file: VirtualFile) = FaguirraEditorState()
-    override fun writeState(state: FileEditorState, project: Project, targetElement: Element) { }
+    override fun readState(sourceElement: Element, project: Project, file: VirtualFile): FaguirraEditorState {
+        val leftPanelState = FaguirraPanelState.read(sourceElement.getChild("left"))
+        val rightPanelState = FaguirraPanelState.read(sourceElement.getChild("right"))
+        return FaguirraEditorState(leftPanelState, rightPanelState, false)
+    }
+
+    override fun writeState(state: FileEditorState, project: Project, targetElement: Element) {
+        if (state is FaguirraEditorState) {
+            val left = Element("left")
+            state.leftPanelState.writeState(left)
+            targetElement.addContent(left)
+
+            val right = Element("right")
+            state.rightPanelState.writeState(right)
+            targetElement.addContent(right)
+        }
+    }
 
     override fun getEditorTypeId() = "Faguirra"
     override fun getPolicy() = FileEditorPolicy.HIDE_DEFAULT_EDITOR
-}
-
-public class FaguirraEditorState(): FileEditorState {
-    override fun canBeMergedWith(otherState: FileEditorState?, level: FileEditorStateLevel?) = false
 }
 
 public class FaguirraFileEditor(val project: Project): UserDataHolderBase(), FileEditor, DumbAware {
@@ -37,8 +69,13 @@ public class FaguirraFileEditor(val project: Project): UserDataHolderBase(), Fil
     override fun getComponent() = tab
     override fun getPreferredFocusedComponent() = tab.getPreferredFocusComponent()
     override fun getName() = "Faguirra"
-    override fun getState(level: FileEditorStateLevel) = FaguirraEditorState()
-    override fun setState(state: FileEditorState) { }
+
+    override fun getState(level: FileEditorStateLevel) = tab.getState()
+    override fun setState(state: FileEditorState) {
+        if (state is FaguirraEditorState) {
+            tab.setState(state)
+        }
+    }
 
     override fun isModified() = false
     override fun isValid() = true
