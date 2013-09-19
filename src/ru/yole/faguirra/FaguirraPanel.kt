@@ -24,6 +24,8 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.actionSystem.CommonShortcuts
+import javax.swing.JLabel
+import com.intellij.openapi.util.text.StringUtil
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
@@ -50,6 +52,7 @@ public class PanelNavigatable(val panel: FaguirraPanel, val directory: VirtualFi
 public class FaguirraPanel(val project: Project): JPanel(BorderLayout()), DataProvider {
     private val fileListModel = CollectionListModel<VirtualFile>()
     private val fileList = JList(fileListModel)
+    private val statusLine = JLabel()
     public var currentDir: VirtualFile = LocalFileSystem.getInstance()!!.getRoot()
 
     private var showHiddenFiles: Boolean = false
@@ -62,12 +65,14 @@ public class FaguirraPanel(val project: Project): JPanel(BorderLayout()), DataPr
                 }
             }
         })
+        fileList.addListSelectionListener({e -> updateStatusLine()})
 
         val editSourceAction = ActionManager.getInstance()!!.getAction(IdeActions.ACTION_EDIT_SOURCE)
         editSourceAction?.registerCustomShortcutSet(CommonShortcuts.ENTER, fileList)
 
         fileList.setCellRenderer(FileRenderer(this))
         add(fileList, BorderLayout.CENTER)
+        add(statusLine, BorderLayout.SOUTH)
         updateCurrentDir(null)
     }
 
@@ -129,6 +134,18 @@ public class FaguirraPanel(val project: Project): JPanel(BorderLayout()), DataPr
             if (it.isDirectory()) PanelNavigatable(this, it) else OpenFileDescriptor(project, it)
         }
         return navigatableList.toArray(arrayOfNulls<Navigatable>(navigatableList.size())) as Array<Navigatable>
+    }
+
+    private fun updateStatusLine() {
+        val text = StringBuilder()
+        val selection = getSelectedFiles()
+        if (selection.size > 1) {
+            text.append(selection.size).append(" files selected")
+        }
+        else if (selection.size == 1 && !selection[0].isDirectory()) {
+            text.append(StringUtil.formatFileSize(selection[0].getLength()))
+        }
+        statusLine.setText(text.toString())
     }
 
     override fun getData(dataKey: String?): Any? =
