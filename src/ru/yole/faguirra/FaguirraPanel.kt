@@ -19,6 +19,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
+import com.intellij.pom.Navigatable
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.IdeActions
+import com.intellij.openapi.actionSystem.CommonShortcuts
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
@@ -31,6 +36,15 @@ public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
             setIcon(IconUtil.getIcon(file, 0, null))
         }
     }
+}
+
+public class PanelNavigatable(val panel: FaguirraPanel, val directory: VirtualFile): Navigatable {
+    override fun navigate(requestFocus: Boolean) {
+        panel.changeDir(directory)
+    }
+
+    override fun canNavigate() = true
+    override fun canNavigateToSource() = true
 }
 
 public class FaguirraPanel(val project: Project): JPanel(BorderLayout()), DataProvider {
@@ -48,12 +62,16 @@ public class FaguirraPanel(val project: Project): JPanel(BorderLayout()), DataPr
                 }
             }
         })
+
+        val editSourceAction = ActionManager.getInstance()!!.getAction(IdeActions.ACTION_EDIT_SOURCE)
+        editSourceAction?.registerCustomShortcutSet(CommonShortcuts.ENTER, fileList)
+
         fileList.setCellRenderer(FileRenderer(this))
         add(fileList, BorderLayout.CENTER)
         updateCurrentDir(null)
     }
 
-    private fun updateCurrentDir(fileToSelect: VirtualFile?) {
+    public fun updateCurrentDir(fileToSelect: VirtualFile?) {
         val contents = getDirContents(currentDir)
         fileListModel.replaceAll(contents)
         val indexToSelect = contents.indexOf(fileToSelect)
@@ -81,19 +99,14 @@ public class FaguirraPanel(val project: Project): JPanel(BorderLayout()), DataPr
     private fun gotoSelectedDir() {
         val selection = fileList.getSelectedValues()
         if (selection.size == 0) return
-        val selectedFile = selection[0] as? VirtualFile
-        val fileToSelect: VirtualFile?
-        if (selectedFile == null) {
-            val parent = currentDir.getParent()
-            if (parent == null) return
-            fileToSelect = currentDir
-            currentDir = parent
-        }
-        else {
-            if (!selectedFile.isDirectory()) return
-            fileToSelect = null
-            currentDir = selectedFile
-        }
+        val selectedFile = selection[0] as VirtualFile
+        changeDir(selectedFile)
+    }
+
+    public fun changeDir(dir: VirtualFile) {
+        if (!dir.isDirectory()) return
+        val fileToSelect = if (dir == currentDir.getParent()) currentDir else null
+        currentDir = dir
         updateCurrentDir(fileToSelect)
     }
 
@@ -111,11 +124,19 @@ public class FaguirraPanel(val project: Project): JPanel(BorderLayout()), DataPr
         return fileList.toArray(arrayOfNulls<PsiElement>(fileList.size())) as Array<PsiElement>
     }
 
+    private fun getSelectedNavigatables(): Array<Navigatable> {
+        val navigatableList = getSelectedFiles().map {
+            if (it.isDirectory()) PanelNavigatable(this, it) else OpenFileDescriptor(project, it)
+        }
+        return navigatableList.toArray(arrayOfNulls<Navigatable>(navigatableList.size())) as Array<Navigatable>
+    }
+
     override fun getData(dataKey: String?): Any? =
             when(dataKey) {
                 PlatformDataKeys.VIRTUAL_FILE_ARRAY.getName() -> getSelectedFiles()
                 LangDataKeys.PSI_ELEMENT_ARRAY.getName() -> getSelectedPsiFiles()
                 PlatformDataKeys.PROJECT.getName() -> project
+                PlatformDataKeys.NAVIGATABLE_ARRAY.getName() -> getSelectedNavigatables()
                 else -> null
             }
 
