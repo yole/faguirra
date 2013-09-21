@@ -41,4 +41,11 @@ public class FaguirraTab(val project: Project): JPanel(BorderLayout()), Disposab
         rightPanel.setState(state.rightPanelState)
         rightPanelActive = state.rightPanelActive
     }
+
+    public fun getOppositePanel(panel: FaguirraPanel): FaguirraPanel =
+            when(panel) {
+                leftPanel -> rightPanel
+                rightPanel -> leftPanel
+                else -> throw IllegalArgumentException("panel from wrong tab")
+            }
 }

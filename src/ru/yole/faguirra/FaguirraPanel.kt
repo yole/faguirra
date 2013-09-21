@@ -32,6 +32,12 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.ui.components.JBScrollPane
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import java.awt.event.KeyEvent
+import javax.swing.KeyStroke
+import com.intellij.openapi.actionSystem.CustomShortcutSet
+import com.intellij.openapi.wm.IdeFocusManager
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
@@ -63,7 +69,14 @@ public class FaguirraVFSListener(val panel: FaguirraPanel): BulkFileListener.Ada
     }
 }
 
-public class FaguirraPanel(val project: Project, parentDisposable: Disposable): JPanel(BorderLayout()), DataProvider, Disposable {
+public class FocusOppositePanelAction(val panel: FaguirraPanel): AnAction() {
+    override fun actionPerformed(e: AnActionEvent?) {
+        val oppositePanel = panel.tab.getOppositePanel(panel)
+        IdeFocusManager.getInstance(panel.project)!!.requestFocus(oppositePanel.getPreferredFocusComponent(), false)
+    }
+}
+
+public class FaguirraPanel(val project: Project, val tab: FaguirraTab): JPanel(BorderLayout()), DataProvider, Disposable {
     private val fileListModel = CollectionListModel<VirtualFile>()
     private val fileList = JList(fileListModel)
     private val statusLine = JLabel()
@@ -83,6 +96,8 @@ public class FaguirraPanel(val project: Project, parentDisposable: Disposable): 
 
         val editSourceAction = ActionManager.getInstance()!!.getAction(IdeActions.ACTION_EDIT_SOURCE)
         editSourceAction?.registerCustomShortcutSet(CommonShortcuts.ENTER, fileList)
+        val tabShortcut = CustomShortcutSet(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0)!!)
+        FocusOppositePanelAction(this).registerCustomShortcutSet(tabShortcut, fileList)
 
         fileList.setCellRenderer(FileRenderer(this))
         add(JBScrollPane(fileList), BorderLayout.CENTER)
@@ -90,7 +105,7 @@ public class FaguirraPanel(val project: Project, parentDisposable: Disposable): 
         updateCurrentDir(null)
 
         project.getMessageBus().connect(this).subscribe(VirtualFileManager.VFS_CHANGES, FaguirraVFSListener(this))
-        Disposer.register(parentDisposable, this)
+        Disposer.register(tab, this)
     }
 
     public override fun dispose() {
@@ -195,7 +210,7 @@ public class FaguirraPanel(val project: Project, parentDisposable: Disposable): 
                 else -> null
             }
 
-    public fun getPreferredFocusComponent(): JComponent? = fileList
+    public fun getPreferredFocusComponent(): JComponent = fileList
 
     public fun getState(): FaguirraPanelState {
         return FaguirraPanelState(currentDir.getPath())
