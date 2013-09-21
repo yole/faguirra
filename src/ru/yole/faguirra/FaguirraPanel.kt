@@ -189,6 +189,9 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab): JPanel(B
         return navigatableList.toArray(arrayOfNulls<Navigatable>(navigatableList.size())) as Array<Navigatable>
     }
 
+    private fun getTargetPsiElement() =
+        PsiManager.getInstance(project).findDirectory(tab.getOppositePanel(this).currentDir)
+
     private fun updateStatusLine() {
         val text = StringBuilder()
         val selection = getSelectedFiles()
@@ -207,6 +210,7 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab): JPanel(B
                 LangDataKeys.PSI_ELEMENT_ARRAY.getName() -> getSelectedPsiFiles()
                 PlatformDataKeys.PROJECT.getName() -> project
                 PlatformDataKeys.NAVIGATABLE_ARRAY.getName() -> getSelectedNavigatables()
+                LangDataKeys.TARGET_PSI_ELEMENT.getName() -> getTargetPsiElement()
                 else -> null
             }
 
