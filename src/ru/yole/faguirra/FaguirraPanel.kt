@@ -97,13 +97,23 @@ public class FocusOppositePanelAction(val panel: FaguirraPanel): AnAction() {
     }
 }
 
+public class FocusTerminalAction(val panel: FaguirraPanel): AnAction() {
+    override fun actionPerformed(e: AnActionEvent?) {
+        val focusTarget = panel.tab.terminalWidget?.getFocusableComponent()
+        if (focusTarget != null) {
+            IdeFocusManager.getInstance(panel.project)!!.requestFocus(focusTarget, false)
+        }
+    }
+}
+
 public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
         : JPanel(BorderLayout()), DataProvider, Disposable, IdeView {
     private val fileListModel = CollectionListModel<VirtualFile>()
     private val fileList = JList(fileListModel)
     private val statusLine = JLabel()
     public var currentDir: VirtualFile = LocalFileSystem.getInstance()!!.getRoot()
-    public val directoryChangeListeners: ArrayList<Function1<VirtualFile, Unit>> = arrayListOf<Function1<VirtualFile, Unit>>()
+    public val directoryChangeListeners: ArrayList<Function2<FaguirraPanel, VirtualFile, Unit>> =
+            arrayListOf<Function2<FaguirraPanel, VirtualFile, Unit>>()
 
     private var showHiddenFiles: Boolean = false
 
@@ -127,6 +137,7 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
         editSourceAction?.registerCustomShortcutSet(CommonShortcuts.ENTER, fileList)
         val tabShortcut = CustomShortcutSet(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0)!!)
         FocusOppositePanelAction(this).registerCustomShortcutSet(tabShortcut, fileList)
+        FocusTerminalAction(this).registerCustomShortcutSet(CommonShortcuts.ESCAPE, fileList)
 
         fileList.setCellRenderer(FileRenderer(this))
         add(JBScrollPane(fileList), BorderLayout.CENTER)
@@ -205,7 +216,7 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
     }
 
     private fun notifyDirectoryChange() {
-        directoryChangeListeners.forEach { it(currentDir) }
+        directoryChangeListeners.forEach { it(this, currentDir) }
     }
 
     private fun getSelectedFiles(): Array<VirtualFile> {
