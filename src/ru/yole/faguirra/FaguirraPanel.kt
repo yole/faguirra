@@ -38,6 +38,7 @@ import java.awt.event.KeyEvent
 import javax.swing.KeyStroke
 import com.intellij.openapi.actionSystem.CustomShortcutSet
 import com.intellij.openapi.wm.IdeFocusManager
+import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
@@ -62,8 +63,16 @@ public class PanelNavigatable(val panel: FaguirraPanel, val directory: VirtualFi
 }
 
 public class FaguirraVFSListener(val panel: FaguirraPanel): BulkFileListener.Adapter() {
+    private fun isRelevant(event: VFileEvent?): Boolean {
+        if (event?.getFile()?.getParent() == panel.currentDir) return true
+        if (event is VFileMoveEvent) {
+            return event.getOldParent() == panel.currentDir || event.getNewParent() == panel.currentDir
+        }
+        return false
+    }
+
     override fun after(events: List<VFileEvent?>) {
-        if (events.any { it?.getFile()?.getParent() == panel.currentDir }) {
+        if (events.any { isRelevant(it) }) {
             panel.refreshCurrentDir()
         }
     }
