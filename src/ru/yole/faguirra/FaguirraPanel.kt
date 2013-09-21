@@ -178,6 +178,7 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
         if (!dir.isDirectory()) return
         val fileToSelect = if (dir == currentDir.getParent()) currentDir else null
         currentDir = dir
+        dir.refresh(true, false)
         updateCurrentDir(fileToSelect)
     }
 
