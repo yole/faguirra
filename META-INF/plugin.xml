@@ -20,6 +20,7 @@
   <extensions defaultExtensionNs="com.intellij">
       <virtualFileSystem id="faguirra" key="faguirra" implementationClass="ru.yole.faguirra.fs.FaguirraFileSystem"/>
       <fileEditorProvider implementation="ru.yole.faguirra.FaguirraEditorProvider"/>
+      <refactoring.moveHandler implementation="ru.yole.faguirra.actions.FaguirraMoveHandler"/>
   </extensions>
 
   <actions>
