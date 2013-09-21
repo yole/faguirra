@@ -42,9 +42,13 @@ import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
 import com.intellij.ide.IdeView
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.openapi.fileChooser.actions.VirtualFileDeleteProvider
+import com.intellij.util.ui.UIUtil
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
+        if (selected) {
+            setBackground(if (hasFocus) UIUtil.getListSelectionBackground() else UIUtil.getListUnfocusedSelectionBackground())
+        }
         val file = value as VirtualFile
         if (file == panel.currentDir.getParent()) {
             append("..")
