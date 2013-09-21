@@ -104,8 +104,8 @@ public class FaguirraPanel(val project: Project, parentDisposable: Disposable): 
         val newIndices = selection.map { contents.indexOf(it) }.filter { it != -1 }
         if (newIndices.size > 0) {
             val newIndexArray = IntArray(newIndices.size())
-            for(i in 0.rangeTo(newIndexArray.size)) {
-                newIndexArray[i] = newIndices[i]-1
+            for(i in 0.rangeTo(newIndexArray.size-1)) {
+                newIndexArray[i] = newIndices[i]
             }
             fileList.setSelectedIndices(newIndexArray)
         }
