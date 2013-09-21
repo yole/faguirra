@@ -49,6 +49,8 @@ public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
         if (selected) {
             setBackground(if (hasFocus) UIUtil.getListSelectionBackground() else UIUtil.getListUnfocusedSelectionBackground())
         }
+        mySelectionForeground = if (hasFocus) UIUtil.getListSelectionForeground() else UIUtil.getListForeground()
+
         val file = value as VirtualFile
         if (file == panel.currentDir.getParent()) {
             append("..")
