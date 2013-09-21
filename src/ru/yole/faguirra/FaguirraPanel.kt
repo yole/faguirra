@@ -40,8 +40,8 @@ import com.intellij.openapi.actionSystem.CustomShortcutSet
 import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
 import com.intellij.ide.IdeView
-import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFileSystemItem
+import com.intellij.openapi.fileChooser.actions.VirtualFileDeleteProvider
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
@@ -146,7 +146,12 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
         val contents = getDirContents(currentDir)
         fileListModel.replaceAll(contents)
         val indexToSelect = contents.indexOf(fileToSelect)
-        fileList.setSelectedIndex(if (indexToSelect < 0) 0 else indexToSelect)
+        val index = if (indexToSelect < 0) 0 else indexToSelect
+        fileList.setSelectedIndex(index)
+        val bounds = fileList.getCellBounds(index, index)
+        if (bounds != null) {
+            fileList.scrollRectToVisible(bounds)
+        }
     }
 
     private fun getDirContents(dir: VirtualFile): List<VirtualFile> {
@@ -226,6 +231,7 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
                 PlatformDataKeys.NAVIGATABLE_ARRAY.getName() -> getSelectedNavigatables()
                 LangDataKeys.TARGET_PSI_ELEMENT.getName() -> getTargetPsiElement()
                 LangDataKeys.IDE_VIEW.getName() -> this
+                PlatformDataKeys.DELETE_ELEMENT_PROVIDER.getName() -> VirtualFileDeleteProvider()
                 else -> null
             }
 
