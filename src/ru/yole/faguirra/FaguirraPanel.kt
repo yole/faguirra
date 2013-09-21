@@ -39,6 +39,9 @@ import javax.swing.KeyStroke
 import com.intellij.openapi.actionSystem.CustomShortcutSet
 import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
+import com.intellij.ide.IdeView
+import com.intellij.psi.PsiDirectory
+import com.intellij.psi.PsiFileSystemItem
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
@@ -85,7 +88,8 @@ public class FocusOppositePanelAction(val panel: FaguirraPanel): AnAction() {
     }
 }
 
-public class FaguirraPanel(val project: Project, val tab: FaguirraTab): JPanel(BorderLayout()), DataProvider, Disposable {
+public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
+        : JPanel(BorderLayout()), DataProvider, Disposable, IdeView {
     private val fileListModel = CollectionListModel<VirtualFile>()
     private val fileList = JList(fileListModel)
     private val statusLine = JLabel()
@@ -220,6 +224,7 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab): JPanel(B
                 PlatformDataKeys.PROJECT.getName() -> project
                 PlatformDataKeys.NAVIGATABLE_ARRAY.getName() -> getSelectedNavigatables()
                 LangDataKeys.TARGET_PSI_ELEMENT.getName() -> getTargetPsiElement()
+                LangDataKeys.IDE_VIEW.getName() -> this
                 else -> null
             }
 
@@ -238,4 +243,14 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab): JPanel(B
             }
         }
     }
+
+    override fun selectElement(element: PsiElement?) {
+        if (element is PsiFileSystemItem) {
+            fileList.setSelectedValue(element.getVirtualFile(), true)
+        }
+    }
+
+    override fun getDirectories() = array(PsiManager.getInstance(project).findDirectory(currentDir)!!)
+
+    override fun getOrChooseDirectory() = PsiManager.getInstance(project).findDirectory(currentDir)
 }
