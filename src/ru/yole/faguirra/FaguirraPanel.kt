@@ -43,6 +43,9 @@ import com.intellij.ide.IdeView
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.openapi.fileChooser.actions.VirtualFileDeleteProvider
 import com.intellij.util.ui.UIUtil
+import java.util.ArrayList
+import java.awt.event.FocusAdapter
+import java.awt.event.FocusEvent
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
@@ -100,6 +103,7 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
     private val fileList = JList(fileListModel)
     private val statusLine = JLabel()
     public var currentDir: VirtualFile = LocalFileSystem.getInstance()!!.getRoot()
+    public val directoryChangeListeners: ArrayList<Function1<VirtualFile, Unit>> = arrayListOf<Function1<VirtualFile, Unit>>()
 
     private var showHiddenFiles: Boolean = false
 
@@ -112,6 +116,12 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
             }
         })
         fileList.addListSelectionListener({e -> updateStatusLine()})
+
+        fileList.addFocusListener(object: FocusAdapter() {
+            override fun focusGained(p0: FocusEvent) {
+                notifyDirectoryChange()
+            }
+        })
 
         val editSourceAction = ActionManager.getInstance()!!.getAction(IdeActions.ACTION_EDIT_SOURCE)
         editSourceAction?.registerCustomShortcutSet(CommonShortcuts.ENTER, fileList)
@@ -191,6 +201,11 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
         currentDir = dir
         dir.refresh(true, false)
         updateCurrentDir(fileToSelect)
+        notifyDirectoryChange()
+    }
+
+    private fun notifyDirectoryChange() {
+        directoryChangeListeners.forEach { it(currentDir) }
     }
 
     private fun getSelectedFiles(): Array<VirtualFile> {

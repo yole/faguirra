@@ -4,7 +4,7 @@
     <entry_points version="2.0" />
   </component>
   <component name="ProjectKey">
-    <option name="state" value="project://b56bcb8e-c063-4a0c-9cb4-bf77599ae30f" />
+    <option name="state" value="https://github.com/yole/faguirra.git" />
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_6" assert-keyword="true" jdk-15="true" project-jdk-name="PyCharm PY-131.91" project-jdk-type="IDEA JDK">
     <output url="file://$PROJECT_DIR$/out" />
