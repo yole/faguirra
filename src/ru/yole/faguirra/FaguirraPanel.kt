@@ -59,6 +59,7 @@ import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.ui.ListSpeedSearch
 import com.intellij.ui.SpeedSearchBase
+import com.intellij.ui.PopupHandler
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
@@ -209,6 +210,7 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
 
         fileList.setCellRenderer(FileRenderer(this))
         ListSpeedSearch(fileList) { if (it is VirtualFile) it.getName() else "" }
+        PopupHandler.installPopupHandler(fileList, "ProjectViewPopupMenu", ActionPlaces.PROJECT_VIEW_POPUP)
         add(JBScrollPane(fileList), BorderLayout.CENTER)
 
         statusLine.setBorder(IdeBorderFactory.createBorder(SideBorder.BOTTOM + SideBorder.TOP))
