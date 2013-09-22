@@ -57,6 +57,8 @@ import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.ui.ListSpeedSearch
+import com.intellij.ui.SpeedSearchBase
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
@@ -117,6 +119,10 @@ public class FocusTerminalAction(val panel: FaguirraPanel): AnAction() {
         if (focusTarget != null) {
             IdeFocusManager.getInstance(panel.project)!!.requestFocus(focusTarget, false)
         }
+    }
+
+    override fun update(e: AnActionEvent?) {
+        e!!.getPresentation().setEnabled(!panel.isSpeedSearchActive())
     }
 }
 
@@ -202,6 +208,7 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
         FocusTerminalAction(this).registerCustomShortcutSet(CommonShortcuts.ESCAPE, fileList)
 
         fileList.setCellRenderer(FileRenderer(this))
+        ListSpeedSearch(fileList) { if (it is VirtualFile) it.getName() else "" }
         add(JBScrollPane(fileList), BorderLayout.CENTER)
 
         statusLine.setBorder(IdeBorderFactory.createBorder(SideBorder.BOTTOM + SideBorder.TOP))
@@ -414,4 +421,6 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
     override fun getDirectories() = array(PsiManager.getInstance(project).findDirectory(currentDir)!!)
 
     override fun getOrChooseDirectory() = PsiManager.getInstance(project).findDirectory(currentDir)
+
+    public fun isSpeedSearchActive(): Boolean = SpeedSearchBase.hasActiveSpeedSearch(fileList)
 }
