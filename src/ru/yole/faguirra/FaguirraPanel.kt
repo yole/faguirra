@@ -47,6 +47,9 @@ import java.util.ArrayList
 import java.awt.event.FocusAdapter
 import java.awt.event.FocusEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileCopyEvent
+import com.intellij.ui.IdeBorderFactory
+import com.intellij.ui.SideBorder
+import com.intellij.util.text.DateFormatUtil
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
@@ -146,7 +149,10 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
 
         fileList.setCellRenderer(FileRenderer(this))
         add(JBScrollPane(fileList), BorderLayout.CENTER)
+
+        statusLine.setBorder(IdeBorderFactory.createBorder(SideBorder.BOTTOM + SideBorder.TOP))
         add(statusLine, BorderLayout.SOUTH)
+
         updateCurrentDir(null)
 
         project.getMessageBus().connect(this).subscribe(VirtualFileManager.VFS_CHANGES, FaguirraVFSListener(this))
@@ -250,13 +256,33 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
         PsiManager.getInstance(project).findDirectory(tab.getOppositePanel(this).currentDir)
 
     private fun updateStatusLine() {
-        val text = StringBuilder()
+        val text = StringBuilder(" ")
         val selection = getSelectedFiles()
-        if (selection.size > 1) {
-            text.append(selection.size).append(" files selected")
+        if (selection.size != 1) {
+            val selectedFiles = selection.filter { !it.isDirectory() }
+            val selectedDirs = selection.filter { it.isDirectory() }
+            if (selectedDirs.size() > 0) {
+                text.append(selectedDirs.size).append(" directories");
+                if (selectedFiles.size > 0) {
+                    text.append(" and ").append(selectedFiles.size).append(" files")
+                }
+                text.append(" selected")
+            }
+            else if (selectedFiles.size > 0) {
+                text.append(selectedFiles.size()).append(" files selected, size ")
+                val totalSize = selectedFiles.fold(0.toLong(), {(size, file) -> size + file.getLength()})
+                text.append(StringUtil.formatFileSize(totalSize))
+            }
+            else {
+                text.append("No selection")
+            }
         }
-        else if (selection.size == 1 && !selection[0].isDirectory()) {
+        else if (!selection[0].isDirectory()) {
             text.append(StringUtil.formatFileSize(selection[0].getLength()))
+            text.append(", modified on ").append(DateFormatUtil.formatDateTime(selection[0].getTimeStamp()))
+        }
+        else {
+            text.append("1 directory selected")
         }
         statusLine.setText(text.toString())
     }
