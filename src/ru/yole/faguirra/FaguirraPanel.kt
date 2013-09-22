@@ -46,6 +46,7 @@ import com.intellij.util.ui.UIUtil
 import java.util.ArrayList
 import java.awt.event.FocusAdapter
 import java.awt.event.FocusEvent
+import com.intellij.openapi.vfs.newvfs.events.VFileCopyEvent
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
@@ -79,6 +80,9 @@ public class FaguirraVFSListener(val panel: FaguirraPanel): BulkFileListener.Ada
         if (event?.getFile()?.getParent() == panel.currentDir) return true
         if (event is VFileMoveEvent) {
             return event.getOldParent() == panel.currentDir || event.getNewParent() == panel.currentDir
+        }
+        if (event is VFileCopyEvent) {
+            return event.getNewParent() == panel.currentDir
         }
         return false
     }
