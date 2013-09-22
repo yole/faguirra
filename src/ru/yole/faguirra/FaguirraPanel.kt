@@ -54,6 +54,9 @@ import com.intellij.ide.highlighter.ArchiveFileType
 import com.intellij.openapi.vfs.JarFileSystem
 import com.intellij.util.ui.UIUtil.FontSize
 import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.actionSystem.ToggleAction
+import com.intellij.openapi.actionSystem.ActionPlaces
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
@@ -117,6 +120,11 @@ public class FocusTerminalAction(val panel: FaguirraPanel): AnAction() {
     }
 }
 
+public class ToggleShowHiddenFilesAction(val panel: FaguirraPanel): ToggleAction("Show Hidden Files") {
+    override fun isSelected(e: AnActionEvent?) = panel.showHiddenFiles
+    override fun setSelected(e: AnActionEvent?, state: Boolean)  { panel.showHiddenFiles = state }
+}
+
 public class FaguirraTitlePanel(val panel: FaguirraPanel): JPanel(BorderLayout()) {
     private val titleLabel = JLabel();
 
@@ -125,6 +133,13 @@ public class FaguirraTitlePanel(val panel: FaguirraPanel): JPanel(BorderLayout()
 
         add(titleLabel, BorderLayout.CENTER)
         titleLabel.setFont(UIUtil.getLabelFont(FontSize.SMALL))
+
+        val actionGroup = DefaultActionGroup()
+        val action = ToggleShowHiddenFilesAction(panel)
+        actionGroup.addAction(action)!!.setAsSecondary(true)
+
+        val toolbar = ActionManager.getInstance()!!.createActionToolbar(ActionPlaces.UNKNOWN, actionGroup, true)!!
+        add(toolbar.getComponent()!!, BorderLayout.EAST)
 
         panel.directoryChangeListeners.add({(panel, dir) -> updateTitle()})
     }
@@ -145,7 +160,12 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
             arrayListOf<Function2<FaguirraPanel, VirtualFile, Unit>>()
     private val titlePanel = FaguirraTitlePanel(this)
 
-    private var showHiddenFiles: Boolean = false
+    public var showHiddenFiles: Boolean = false
+       get() { return $showHiddenFiles }
+       set(show) {
+           $showHiddenFiles = show
+           refreshCurrentDir()
+      }
 
     {
         fileList.addMouseListener(object : MouseAdapter() {
@@ -198,6 +218,7 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
                 newIndexArray[i] = newIndices[i]
             }
             fileList.setSelectedIndices(newIndexArray)
+            scrollInView(newIndices[0])
         }
         else {
             fileList.setSelectedIndex(oldSelectedIndex)
@@ -210,6 +231,10 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
         val indexToSelect = contents.indexOf(fileToSelect)
         val index = if (indexToSelect < 0) 0 else indexToSelect
         fileList.setSelectedIndex(index)
+        scrollInView(index)
+    }
+
+    private fun scrollInView(index: Int) {
         val bounds = fileList.getCellBounds(index, index)
         if (bounds != null) {
             fileList.scrollRectToVisible(bounds)
