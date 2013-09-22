@@ -55,7 +55,7 @@ public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
         mySelectionForeground = if (hasFocus) UIUtil.getListSelectionForeground() else UIUtil.getListForeground()
 
         val file = value as VirtualFile
-        if (file == panel.currentDir.getParent()) {
+        if (file == panel.currentParent) {
             append("..")
         }
         else {
@@ -112,6 +112,7 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
     private val fileList = JList(fileListModel)
     private val statusLine = JLabel()
     public var currentDir: VirtualFile = LocalFileSystem.getInstance()!!.getRoot()
+    public var currentParent: VirtualFile? = null
     public val directoryChangeListeners: ArrayList<Function2<FaguirraPanel, VirtualFile, Unit>> =
             arrayListOf<Function2<FaguirraPanel, VirtualFile, Unit>>()
 
@@ -208,8 +209,9 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
 
     public fun changeDir(dir: VirtualFile) {
         if (!dir.isDirectory()) return
-        val fileToSelect = if (dir == currentDir.getParent()) currentDir else null
+        val fileToSelect = if (dir == currentParent) currentDir else null
         currentDir = dir
+        currentParent = currentDir.getParent()
         dir.refresh(true, false)
         updateCurrentDir(fileToSelect)
         notifyDirectoryChange()
@@ -219,9 +221,9 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
         directoryChangeListeners.forEach { it(this, currentDir) }
     }
 
-    private fun getSelectedFiles(): Array<VirtualFile> {
+    private fun getSelectedFiles(includeParent: Boolean = false): Array<VirtualFile> {
         val selectionArray = fileList.getSelectedValues() as Array<Any?>
-        val selection = selectionArray.filter { it as? VirtualFile != null }
+        val selection = selectionArray.filter { it as? VirtualFile != null && (includeParent || it != currentParent) }
         return selection.toArray(arrayOfNulls<VirtualFile>(selection.size)) as Array<VirtualFile>
     }
 
@@ -234,7 +236,7 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
     }
 
     private fun getSelectedNavigatables(): Array<Navigatable> {
-        val navigatableList = getSelectedFiles().map {
+        val navigatableList = getSelectedFiles(true).map {
             if (it.isDirectory()) PanelNavigatable(this, it) else OpenFileDescriptor(project, it)
         }
         return navigatableList.toArray(arrayOfNulls<Navigatable>(navigatableList.size())) as Array<Navigatable>
