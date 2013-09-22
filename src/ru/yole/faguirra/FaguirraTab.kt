@@ -73,8 +73,9 @@ public class FaguirraTab(val project: Project): JPanel(BorderLayout()), Disposab
     private fun currentDirChanged(panel: FaguirraPanel, dir: VirtualFile) {
         lastActivePanel = panel
         val input = terminalRunner.ttyConnector
-        if (input != null) {
-            input.write("cd " + dir.getPath() + "\n")
+        val path = dir.getPath()
+        if (input != null && path != null) {
+            input.write("cd " + path.replace(" ", "\\ ").replace("(", "\\(").replace(")", "\\)") + "\n")
         }
     }
 
