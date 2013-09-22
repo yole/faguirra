@@ -125,6 +125,11 @@ public class ToggleShowHiddenFilesAction(val panel: FaguirraPanel): ToggleAction
     override fun setSelected(e: AnActionEvent?, state: Boolean)  { panel.showHiddenFiles = state }
 }
 
+public class ToggleDirectoriesOnTop(val panel: FaguirraPanel): ToggleAction("Show Directories on Top") {
+    override fun isSelected(e: AnActionEvent?) = panel.directoriesOnTop
+    override fun setSelected(e: AnActionEvent?, state: Boolean)  { panel.directoriesOnTop = state }
+}
+
 public class FaguirraTitlePanel(val panel: FaguirraPanel): JPanel(BorderLayout()) {
     private val titleLabel = JLabel();
 
@@ -135,8 +140,8 @@ public class FaguirraTitlePanel(val panel: FaguirraPanel): JPanel(BorderLayout()
         titleLabel.setFont(UIUtil.getLabelFont(FontSize.SMALL))
 
         val actionGroup = DefaultActionGroup()
-        val action = ToggleShowHiddenFilesAction(panel)
-        actionGroup.addAction(action)!!.setAsSecondary(true)
+        actionGroup.addAction(ToggleShowHiddenFilesAction(panel))!!.setAsSecondary(true)
+        actionGroup.addAction(ToggleDirectoriesOnTop(panel))!!.setAsSecondary(true)
 
         val toolbar = ActionManager.getInstance()!!.createActionToolbar(ActionPlaces.UNKNOWN, actionGroup, true)!!
         add(toolbar.getComponent()!!, BorderLayout.EAST)
@@ -161,11 +166,18 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
     private val titlePanel = FaguirraTitlePanel(this)
 
     public var showHiddenFiles: Boolean = false
-       get() { return $showHiddenFiles }
+       get
        set(show) {
            $showHiddenFiles = show
            refreshCurrentDir()
       }
+
+    public var directoriesOnTop: Boolean = true
+        get
+        set(value) {
+            $directoriesOnTop = value
+            refreshCurrentDir()
+        }
 
     {
         fileList.addMouseListener(object : MouseAdapter() {
@@ -246,6 +258,10 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
         dir.getChildren()!!.toCollection(result)
         Collections.sort(result, object: Comparator<VirtualFile> {
             override fun compare(p0: VirtualFile, p1: VirtualFile): Int {
+                if (directoriesOnTop) {
+                    if (p0.isDirectory() && !p1.isDirectory()) return -1
+                    if (p1.isDirectory() && !p0.isDirectory()) return 1
+                }
                 return p0.getName().toLowerCase().compareTo(p1.getName().toLowerCase())
             }
         })
