@@ -50,6 +50,8 @@ import com.intellij.openapi.vfs.newvfs.events.VFileCopyEvent
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.SideBorder
 import com.intellij.util.text.DateFormatUtil
+import com.intellij.ide.highlighter.ArchiveFileType
+import com.intellij.openapi.vfs.JarFileSystem
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
@@ -200,7 +202,7 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
                 return p0.getName().toLowerCase().compareTo(p1.getName().toLowerCase())
             }
         })
-        val parent = dir.getParent()
+        val parent = currentParent
         if (parent != null) {
             result.add(0, parent)
         }
@@ -217,11 +219,33 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
         changeDir(selectedFile)
     }
 
+    private fun getLocalFile(f: VirtualFile): VirtualFile {
+        if (f.getFileSystem() is JarFileSystem) {
+            val localFile = JarFileSystem.getInstance()!!.getLocalVirtualFileFor(f)
+            if (localFile != null) return localFile
+        }
+        return f
+    }
+
     public fun changeDir(dir: VirtualFile) {
-        if (!dir.isDirectory()) return
-        val fileToSelect = if (dir == currentParent) currentDir else null
-        currentDir = dir
-        currentParent = currentDir.getParent()
+        var fileToSelect: VirtualFile? = null
+        if (dir == currentParent) {
+            fileToSelect = if (currentDir.getParent() == null) getLocalFile(currentDir) else currentDir
+        }
+        if (!dir.isDirectory()) {
+            if (dir.getFileType() !is ArchiveFileType) return
+            val jarRoot = JarFileSystem.getInstance()!!.getJarRootForLocalFile(dir)
+            if (jarRoot == null) return
+            currentParent = dir.getParent()
+            currentDir = jarRoot
+        }
+        else {
+            currentDir = dir
+            currentParent = currentDir.getParent()
+            if (currentParent == null && currentDir.getFileSystem() is JarFileSystem) {
+                currentParent = getLocalFile(currentDir).getParent()
+            }
+        }
         dir.refresh(true, false)
         updateCurrentDir(fileToSelect)
         notifyDirectoryChange()
@@ -247,7 +271,10 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
 
     private fun getSelectedNavigatables(): Array<Navigatable> {
         val navigatableList = getSelectedFiles(true).map {
-            if (it.isDirectory()) PanelNavigatable(this, it) else OpenFileDescriptor(project, it)
+            if (it.isDirectory() || it.getFileType() is ArchiveFileType)
+                PanelNavigatable(this, it)
+            else
+                OpenFileDescriptor(project, it)
         }
         return navigatableList.toArray(arrayOfNulls<Navigatable>(navigatableList.size())) as Array<Navigatable>
     }
@@ -302,7 +329,7 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
     public fun getPreferredFocusComponent(): JComponent = fileList
 
     public fun getState(): FaguirraPanelState {
-        return FaguirraPanelState(currentDir.getPath())
+        return FaguirraPanelState(getLocalFile(currentDir).getPath())
     }
 
     public fun setState(state: FaguirraPanelState) {

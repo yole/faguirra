@@ -11,14 +11,12 @@ import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner
 import com.pty4j.PtyProcess
 import com.jediterm.terminal.TtyConnector
 import org.jetbrains.plugins.terminal.JBTabbedTerminalWidget
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.wm.IdeFocusManager
-import com.intellij.openapi.actionSystem.CommonShortcuts
 import com.jediterm.terminal.ui.TerminalActionProvider
 import com.jediterm.terminal.ui.TerminalAction
 import javax.swing.KeyStroke
 import java.awt.event.KeyEvent
+import com.intellij.openapi.vfs.LocalFileSystem
 
 class FaguirraTerminalRunner(project: Project): LocalTerminalDirectRunner(project) {
     var ttyConnector: TtyConnector? = null
@@ -73,9 +71,11 @@ public class FaguirraTab(val project: Project): JPanel(BorderLayout()), Disposab
     private fun currentDirChanged(panel: FaguirraPanel, dir: VirtualFile) {
         lastActivePanel = panel
         val input = terminalRunner.ttyConnector
-        val path = dir.getPath()
-        if (input != null && path != null) {
-            input.write("cd " + path.replace(" ", "\\ ").replace("(", "\\(").replace(")", "\\)") + "\n")
+        if (dir.getFileSystem() is LocalFileSystem) {
+            val path = dir.getPath()
+            if (input != null && path != null) {
+                input.write("cd " + path.replace(" ", "\\ ").replace("(", "\\(").replace(")", "\\)") + "\n")
+            }
         }
     }
 
