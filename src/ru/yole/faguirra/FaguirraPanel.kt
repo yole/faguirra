@@ -52,6 +52,8 @@ import com.intellij.ui.SideBorder
 import com.intellij.util.text.DateFormatUtil
 import com.intellij.ide.highlighter.ArchiveFileType
 import com.intellij.openapi.vfs.JarFileSystem
+import com.intellij.util.ui.UIUtil.FontSize
+import com.intellij.openapi.util.io.FileUtil
 
 public class FileRenderer(val panel: FaguirraPanel): ColoredListCellRenderer() {
     override fun customizeCellRenderer(list: JList?, value: Any?, index: Int, selected: Boolean, hasFocus: Boolean) {
@@ -115,6 +117,23 @@ public class FocusTerminalAction(val panel: FaguirraPanel): AnAction() {
     }
 }
 
+public class FaguirraTitlePanel(val panel: FaguirraPanel): JPanel(BorderLayout()) {
+    private val titleLabel = JLabel();
+
+    {
+        setBorder(IdeBorderFactory.createBorder(SideBorder.BOTTOM))
+
+        add(titleLabel, BorderLayout.CENTER)
+        titleLabel.setFont(UIUtil.getLabelFont(FontSize.SMALL))
+
+        panel.directoryChangeListeners.add({(panel, dir) -> updateTitle()})
+    }
+
+    private fun updateTitle() {
+        titleLabel.setText(FileUtil.getLocationRelativeToUserHome(panel.currentDir.getPath()))
+    }
+}
+
 public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
         : JPanel(BorderLayout()), DataProvider, Disposable, IdeView {
     private val fileListModel = CollectionListModel<VirtualFile>()
@@ -124,6 +143,7 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
     public var currentParent: VirtualFile? = null
     public val directoryChangeListeners: ArrayList<Function2<FaguirraPanel, VirtualFile, Unit>> =
             arrayListOf<Function2<FaguirraPanel, VirtualFile, Unit>>()
+    private val titlePanel = FaguirraTitlePanel(this)
 
     private var showHiddenFiles: Boolean = false
 
@@ -153,7 +173,9 @@ public class FaguirraPanel(val project: Project, val tab: FaguirraTab)
         add(JBScrollPane(fileList), BorderLayout.CENTER)
 
         statusLine.setBorder(IdeBorderFactory.createBorder(SideBorder.BOTTOM + SideBorder.TOP))
+        statusLine.setFont(UIUtil.getLabelFont(FontSize.SMALL))
         add(statusLine, BorderLayout.SOUTH)
+        add(titlePanel, BorderLayout.NORTH)
 
         updateCurrentDir(null)
 
